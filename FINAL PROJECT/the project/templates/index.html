@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Predictor</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e40af 40%, #2563eb 100%);
+            --panel-bg: rgba(255, 255, 255, 0.96);
+            --border-soft: rgba(37, 99, 235, 0.16);
+            --text-primary: #0f172a;
+            --text-muted: #475569;
+            --accent: #2563eb;
+            --accent-soft: rgba(37, 99, 235, 0.12);
+            --success: #0f766e;
+            --danger: #b91c1c;
+            --shadow-lg: 0 25px 60px rgba(15, 23, 42, 0.35);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-gradient: linear-gradient(140deg, #020617 0%, #1e293b 55%, #334155 100%);
+                --panel-bg: rgba(15, 23, 42, 0.9);
+                --border-soft: rgba(148, 163, 184, 0.18);
+                --text-primary: #f8fafc;
+                --text-muted: #cbd5f5;
+                --accent: #38bdf8;
+                --accent-soft: rgba(56, 189, 248, 0.18);
+                --success: #34d399;
+                --danger: #f87171;
+                --shadow-lg: 0 25px 60px rgba(2, 6, 23, 0.6);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(1.5rem, 3vw, 3rem);
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            width: 65vw;
+            max-width: 900px;
+            aspect-ratio: 1;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.12), transparent 65%);
+            filter: blur(0px);
+            opacity: 0.65;
+            pointer-events: none;
+            animation: float 18s ease-in-out infinite;
+        }
+
+        body::before {
+            top: -25vh;
+            left: -20vw;
+        }
+
+        body::after {
+            bottom: -30vh;
+            right: -15vw;
+            animation-delay: -6s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+            40% {
+                transform: translate3d(12px, 18px, 0) scale(1.05);
+            }
+            70% {
+                transform: translate3d(-16px, 6px, 0) scale(0.97);
+            }
+        }
+
+        .shell {
+            width: min(1240px, 100%);
+            display: grid;
+            gap: clamp(1.6rem, 2vw, 2.6rem);
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        }
+
+        .panel {
+            position: relative;
+            background: var(--panel-bg);
+            border-radius: 24px;
+            padding: clamp(2rem, 3vw, 2.85rem);
+            backdrop-filter: blur(12px);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(160deg, rgba(37, 99, 235, 0.12), transparent 45%);
+            z-index: -1;
+        }
+
+        .hero {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(1.1rem, 2vw, 1.6rem);
+            justify-content: center;
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: clamp(2.2rem, 4vw, 3rem);
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+        }
+
+        .hero p {
+            margin: 0;
+            font-size: clamp(1rem, 2vw, 1.1rem);
+            color: var(--text-muted);
+            max-width: 36ch;
+        }
+
+        .hero-cta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .glow-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.55rem 1rem;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.08);
+            color: var(--accent);
+            font-size: 0.95rem;
+            box-shadow: inset 0 0 0 1px var(--border-soft);
+        }
+
+        .glow-pill span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: inline-flex;
+            animation: pulse 2.2s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(0.8);
+                opacity: 0.6;
+            }
+            50% {
+                transform: scale(1.15);
+                opacity: 1;
+            }
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .section-heading {
+            margin: 0 0 0.5rem;
+            font-size: 1rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .field-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .field-grid.two {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+
+        .field-grid.three {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .field {
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .field label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        select,
+        input[type="number"],
+        input[type="date"] {
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid var(--border-soft);
+            padding: 0.85rem 1rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+            background: rgba(248, 250, 252, 0.82);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            select,
+            input[type="number"],
+            input[type="date"] {
+                background: rgba(15, 23, 42, 0.75);
+            }
+        }
+
+        select:focus,
+        input[type="number"]:focus,
+        input[type="date"]:focus {
+            outline: none;
+            border-color: rgba(37, 99, 235, 0.55);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .actions button {
+            flex: 1;
+            min-width: 160px;
+            border-radius: 14px;
+            border: none;
+            padding: 0.95rem 1.2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .btn-secondary {
+            background: rgba(37, 99, 235, 0.12);
+            color: var(--accent);
+            box-shadow: inset 0 0 0 1px var(--accent-soft);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-1px);
+            box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #ffffff;
+            box-shadow: 0 18px 35px rgba(37, 99, 235, 0.32);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 22px 40px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status {
+            margin-top: 1.25rem;
+            min-height: 72px;
+            display: grid;
+            place-items: center;
+        }
+
+        .status-card {
+            padding: 1.1rem 1.35rem;
+            border-radius: 16px;
+            width: 100%;
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+            animation: fadeUp 360ms ease both;
+        }
+
+        .status-card.success {
+            background: rgba(15, 118, 110, 0.12);
+            color: var(--success);
+        }
+
+        .status-card.error {
+            background: rgba(185, 28, 28, 0.12);
+            color: var(--danger);
+        }
+
+        .loader {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 3px solid rgba(37, 99, 235, 0.2);
+            border-top-color: var(--accent);
+            animation: spin 0.85s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .tips {
+            display: grid;
+            gap: 1.25rem;
+            color: var(--text-muted);
+        }
+
+        .tip {
+            background: rgba(15, 23, 42, 0.12);
+            border-radius: 18px;
+            padding: 1.25rem 1.4rem;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .tip {
+                background: rgba(100, 116, 139, 0.15);
+            }
+        }
+
+        .tip h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: var(--text-primary);
+        }
+
+        .tip p {
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .quick-presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+        }
+
+        .preset-btn {
+            border: none;
+            padding: 0.55rem 1rem;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--accent);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .preset-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 18px rgba(37, 99, 235, 0.25);
+        }
+
+        @media (max-width: 960px) {
+            body {
+                padding: 1.5rem;
+            }
+            .shell {
+                gap: 1.5rem;
+            }
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 1.25rem;
+            }
+            .panel {
+                padding: 1.65rem;
+            }
+            .actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 1ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 1ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <section class="panel hero">
+            <span class="glow-pill"><span></span> Live model endpoint</span>
+            <h1>Interactive Model Playground</h1>
+            <p>Enter profitable order details, choose the market context, and watch the prediction animate into view. Everything is wired to your Flask API in real time.</p>
+            <div class="hero-cta">
+                <div class="glow-pill">API ready at <code>/predict</code></div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <form id="predict-form" novalidate>
+                <div>
+                    <h2 class="section-heading">Location &amp; customer</h2>
+                    <div class="field-grid three">
+                        <div class="field">
+                            <label for="city">City</label>
+                            <select id="city" name="city" required>
+                                {% for option in city_options %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="state">State / Province</label>
+                            <select id="state" name="state" required>
+                                {% for option in state_options %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="country">Country</label>
+                            <select id="country" name="country" required>
+                                {% for option in country_options %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="segment">Segment</label>
+                            <select id="segment" name="segment" required>
+                                {% for option in segment_options %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="region">Region</label>
+                            <select id="region" name="region" required>
+                                {% for option in region_options %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="ship_mode">Ship mode</label>
+                            <select id="ship_mode" name="ship_mode" required>
+                                {% for option in ship_mode_options %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="section-heading">Product</h2>
+                    <div class="field-grid two">
+                        <div class="field">
+                            <label for="category">Category</label>
+                            <select id="category" name="category" required>
+                                {% for option in category_options %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="sub_category">Sub-category</label>
+                            <select id="sub_category" name="sub_category" required>
+                                {% for option in sub_category_options %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="order_priority">Order priority</label>
+                            <select id="order_priority" name="order_priority" required>
+                                {% for option in order_priority_options %}
+                                <option value="{{ option.value }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="section-heading">Metrics</h2>
+                    <div class="field-grid two">
+                        <div class="field">
+                            <label for="quantity">Quantity</label>
+                            <input type="number" id="quantity" name="quantity" min="1" step="1" value="1" required>
+                        </div>
+                        <div class="field">
+                            <label for="discount">Discount</label>
+                            <input type="number" id="discount" name="discount" min="0" max="1" step="0.01" value="0" required>
+                            <p class="hint">Use decimal form (e.g. 0.2 for 20%).</p>
+                        </div>
+                        <div class="field">
+                            <label for="profit">Profit</label>
+                            <input type="number" id="profit" name="profit" step="0.01" value="0" required>
+                        </div>
+                        <div class="field">
+                            <label for="shipping_cost">Shipping cost</label>
+                            <input type="number" id="shipping_cost" name="shipping_cost" step="0.01" value="0" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="section-heading">Dates</h2>
+                    <div class="field-grid two">
+                        <div class="field">
+                            <label for="order_date">Order date</label>
+                            <input type="date" id="order_date" name="order_date" required>
+                        </div>
+                        <div class="field">
+                            <label for="ship_date">Ship date</label>
+                            <input type="date" id="ship_date" name="ship_date" required>
+                            <p class="hint" id="duration-hint">Shipping duration: 0 day(s)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button type="button" id="apply-random" class="btn-secondary">Random preset</button>
+                    <button type="reset" id="reset-btn" class="btn-secondary">Clear form</button>
+                    <button type="submit" id="predict-btn" class="btn-primary">Predict</button>
+                </div>
+            </form>
+
+            <div class="status" id="status" role="status" aria-live="polite"></div>
+        </section>
+
+        <aside class="tips">
+            <div class="tip">
+                <h3>How to use</h3>
+                <p>Fill in the business context just like an order form. We transform your selections into the exact feature vector that the trained model expects.</p>
+            </div>
+            <div class="tip">
+                <h3>Quick presets</h3>
+                <div class="quick-presets" id="preset-container">
+                    {% for preset in presets %}
+                    <button type="button" class="preset-btn" data-preset='{{ preset.data | tojson }}'>{{ preset.label }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="tip">
+                <h3>Keyboard friendly</h3>
+                <p>Tab through inputs, use the arrow keys inside selects, and press Enter to predict. Dates support native pickers for both desktop and mobile.</p>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        (function () {
+            const form = document.getElementById('predict-form');
+            const predictBtn = document.getElementById('predict-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const status = document.getElementById('status');
+            const durationHint = document.getElementById('duration-hint');
+            const orderDateInput = document.getElementById('order_date');
+            const shipDateInput = document.getElementById('ship_date');
+            const randomPresetBtn = document.getElementById('apply-random');
+            const presetButtons = [...document.querySelectorAll('.preset-btn')];
+
+            const clampToDigits = (value) => {
+                if (value === '' || Number.isNaN(Number(value))) {
+                    return value;
+                }
+                const parsed = Number(value);
+                return Math.abs(parsed) >= 1e6 ? parsed.toExponential(4) : Number(parsed.toFixed(4));
+            };
+
+            const updateDuration = () => {
+                const orderDate = orderDateInput.value;
+                const shipDate = shipDateInput.value;
+                if (orderDate && shipDate) {
+                    const start = new Date(orderDate);
+                    const end = new Date(shipDate);
+                    const diffMs = end.getTime() - start.getTime();
+                    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+                    if (Number.isNaN(diffDays)) {
+                        durationHint.textContent = 'Shipping duration: 0 day(s)';
+                    } else if (diffDays < 0) {
+                        durationHint.textContent = 'Ship date must be after order date';
+                    } else {
+                        durationHint.textContent = `Shipping duration: ${diffDays} day(s)`;
+                    }
+                } else {
+                    durationHint.textContent = 'Shipping duration: 0 day(s)';
+                }
+            };
+
+            const showStatus = (type, message) => {
+                status.innerHTML = '';
+                if (type === 'loading') {
+                    const loader = document.createElement('div');
+                    loader.className = 'loader';
+                    status.appendChild(loader);
+                    return;
+                }
+                const card = document.createElement('div');
+                card.className = `status-card ${type}`;
+                card.textContent = message;
+                status.appendChild(card);
+            };
+
+            const clearStatus = () => {
+                status.innerHTML = '';
+            };
+
+            const gatherPayload = () => {
+                const formData = new FormData(form);
+                const payload = Object.fromEntries(formData.entries());
+                return {
+                    ...payload,
+                    quantity: payload.quantity,
+                    discount: payload.discount,
+                    profit: payload.profit,
+                    shipping_cost: payload.shipping_cost,
+                };
+            };
+
+            const applyPreset = (data) => {
+                Object.entries(data).forEach(([key, value]) => {
+                    if (form.elements[key]) {
+                        form.elements[key].value = value;
+                    }
+                });
+                updateDuration();
+                showStatus('success', 'Preset applied');
+            };
+
+            const predict = async () => {
+                try {
+                    const payload = gatherPayload();
+                    showStatus('loading');
+                    predictBtn.disabled = true;
+
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const body = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(body.error || 'Prediction request failed.');
+                    }
+
+                    const value = Array.isArray(body.prediction) ? body.prediction[0] : body.prediction;
+                    const formatted = clampToDigits(value);
+
+                    if (body.details && Number.isFinite(body.details.shipping_duration)) {
+                        durationHint.textContent = `Shipping duration: ${body.details.shipping_duration} day(s)`;
+                    }
+
+                    showStatus('success', `Prediction: ${formatted}`);
+                } catch (error) {
+                    showStatus('error', error.message);
+                } finally {
+                    predictBtn.disabled = false;
+                }
+            };
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                predict();
+            });
+
+            form.addEventListener('reset', () => {
+                setTimeout(() => {
+                    form.reset();
+                    updateDuration();
+                    clearStatus();
+                }, 0);
+            });
+
+            orderDateInput.addEventListener('change', updateDuration);
+            shipDateInput.addEventListener('change', updateDuration);
+
+            randomPresetBtn.addEventListener('click', () => {
+                if (!presetButtons.length) {
+                    return;
+                }
+                const randomButton = presetButtons[Math.floor(Math.random() * presetButtons.length)];
+                randomButton.click();
+            });
+
+            presetButtons.forEach((button) => {
+                button.addEventListener('click', () => {
+                    try {
+                        const data = JSON.parse(button.dataset.preset || '{}');
+                        applyPreset(data);
+                    } catch (error) {
+                        showStatus('error', 'Unable to apply preset.');
+                    }
+                });
+            });
+
+            // Initialise default dates to today for convenience
+            const today = new Date().toISOString().split('T')[0];
+            orderDateInput.value = today;
+            shipDateInput.value = today;
+            updateDuration();
+        })();
+    </script>
+</body>
+</html>
