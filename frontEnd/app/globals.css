@@ -1,0 +1,156 @@
+/* stylelint-disable at-rule-no-unknown */
+/* Tailwind directives — processed by PostCSS with the Tailwind CSS plugin */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Subtle gradient background with calm, distinguished aesthetic */
+@layer base {
+  :root {
+    /* Calm gradient theme - Soft blues, greens, and purples */
+    --background: 220 30% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 220 25% 14%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 220 25% 14%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 260 80% 55%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 200 70% 50%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 32.6% 25%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 180 70% 50%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 32.6% 17.5%;
+    --input: 217 32.6% 17.5%;
+    --ring: 260 80% 55%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 220 30% 8%;
+    --foreground: 210 40% 98%;
+    --card: 220 25% 14%;
+    --card-foreground: 210 40% 98%;
+    --popover: 220 25% 14%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 260 80% 55%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 200 70% 50%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 32.6% 25%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 180 70% 50%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 32.6% 17.5%;
+    --input: 217 32.6% 17.5%;
+    --ring: 260 80% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background: linear-gradient(
+      135deg,
+      rgba(15, 23, 42, 0.98) 0%,
+      rgba(30, 41, 59, 0.95) 25%,
+      rgba(15, 35, 50, 0.95) 50%,
+      rgba(25, 30, 45, 0.98) 100%
+    );
+    min-height: 100vh;
+  }
+}
+
+/* Updated gradient animations to be more calm and distinguished */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Updated gradient text to use calmer colors */
+.gradient-text {
+  @apply bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent;
+  background-size: 200% 200%;
+  animation: gradientShift 4s ease infinite;
+}
+
+.gradient-bg {
+  @apply bg-gradient-to-br from-blue-600 via-purple-600 to-cyan-600;
+}
+
+.gradient-border {
+  @apply relative;
+}
+
+.gradient-border::before {
+  @apply absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 -z-10;
+}
+
+.card-glow {
+  @apply transition-all duration-300 hover:shadow-lg;
+  box-shadow: 0 0 20px rgba(100, 150, 200, 0.15);
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 30px rgba(100, 150, 200, 0.25);
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+.fade-in-scale {
+  animation: fadeInScale 0.4s ease-out;
+}
+
+.glow-pulse {
+  box-shadow: 0 0 10px rgba(100, 150, 200, 0.4);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

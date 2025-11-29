@@ -1,0 +1,20 @@
+run backend : 
+
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+uvicorn app:app --reload --port 8001
+##########################################################################
+
+run front end :
+
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+npm install 
+npm run dev
+##########################################################################
+
+csv file must has columns :
+
+Sales
+Orders
+Category
+Segment
+Discount
